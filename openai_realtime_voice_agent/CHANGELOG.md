@@ -2,6 +2,21 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.6.2
+
+> Needs the matching Voice PE firmware (ngoels/home-assistant-voice-pe) with
+> the `announce` action — update the device in ESPHome too.
+
+- **Announcements in the assistant's voice.** Automations can now make the
+  speaker say a message with the device action
+  `esphome.<device name>_announce` (field `message`). The add-on has OpenAI
+  speak the text word for word in your configured voice and speed. It is an
+  out-of-band response, so it is not added to the conversation and doesn't
+  affect the next question. If a conversation is running, the announcement
+  waits until it has finished (up to 60 s). No follow-up listening window opens
+  afterwards; "stop" cuts an announcement short. Look for `📢` in the log.
+  Each announcement is a short, paid OpenAI request.
+
 ## 0.6.1
 
 - **The assistant now knows your device names.** At the start of each
