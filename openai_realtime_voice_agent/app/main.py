@@ -321,7 +321,12 @@ class Application:
         # Optional allow-list to trim the (large) ha-mcp tool set exposed to the
         # model. Comma-separated tool names; empty means expose all.
         mcp_tool_allowlist = [t.strip() for t in os.environ.get("MCP_TOOL_ALLOWLIST", "").split(",") if t.strip()]
-        
+
+        # Entity overview: put the names of all exposed entities (from
+        # GetLiveContext) into the system prompt at session start, as Home
+        # Assistant's own conversation agents do. ON by default.
+        include_entity_overview = os.environ.get("INCLUDE_ENTITY_OVERVIEW", "true").lower() == "true"
+
         # Web search: let the assistant look things up online (weather, news,
         # facts). ON by default; existing installs keep their saved option, so an
         # Update won't silently flip it. When on, a `web_search` function tool
@@ -451,6 +456,7 @@ class Application:
         self.max_output_tokens = max_output_tokens
         self.noise_reduction = noise_reduction
         self.mcp_tool_allowlist = mcp_tool_allowlist
+        self.include_entity_overview = include_entity_overview
         self.mcp_client = mcp_client
         self.enable_web_search = enable_web_search
         self.web_search_model = web_search_model
@@ -489,6 +495,32 @@ class Application:
         """Update session activity timestamp (called by SessionActivityTracker)."""
         pass
     
+    async def _build_instructions(self) -> str:
+        """The configured instructions, plus the exposed-entity overview if enabled.
+
+        Fetched per new session, so entities exposed or renamed since the last
+        session are picked up without restarting the add-on. On any failure the
+        plain instructions are used and the model falls back to GetLiveContext.
+        """
+        if not (self.include_entity_overview and self.mcp_service):
+            return self.instructions
+        overview = await self.mcp_service.fetch_entity_overview()
+        if not overview:
+            return self.instructions
+        count = sum(1 for line in overview.splitlines() if line.startswith("- "))
+        logger.info(f"🏠 Added {count} exposed entities to the instructions")
+        return (
+            f"{self.instructions}\n\n"
+            "EXPOSED HOME ASSISTANT ENTITIES (names, domain, area; no live values):\n"
+            f"{overview}\n\n"
+            "Use these exact names and areas in tool calls (name, area, domain). Users "
+            "may say a translation, a shortened or a colloquial form of a name; map it "
+            "to the closest entry above. Valid domains are only those listed above. "
+            "This list has NO current states or values: for anything current (is it on, "
+            "temperature, power, volume) always call GetLiveContext, filtered by the "
+            "exact name or area from this list, or with no arguments at all."
+        )
+
     async def _ensure_openai_service(self, client_id: Optional[str] = None):
         """Create a new OpenAI service instance for a client.
         
@@ -630,7 +662,7 @@ class Application:
             )
 
             session_properties = SessionProperties(
-                instructions=self.instructions,
+                instructions=await self._build_instructions(),
                 # Cap the reply length: bounds runaway monologues + per-response
                 # output-token cost. None = unlimited (the API default "inf").
                 max_output_tokens=self.max_output_tokens,
