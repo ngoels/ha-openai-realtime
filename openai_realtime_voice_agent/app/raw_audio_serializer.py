@@ -1,4 +1,5 @@
 """Simple serializer for raw binary PCM audio frames."""
+import asyncio
 import json
 import logging
 import os
@@ -50,6 +51,10 @@ class RawAudioSerializer(FrameSerializer):
         # Resets the dangling-VAD guard's "speech since wake" tracker. Set by
         # WebSocketHandler.build_pipeline.
         self._on_wake = None
+        # Async callback(text) for {"type":"announce","text":...} — a Home
+        # Assistant announcement forwarded by the device. Set by
+        # WebSocketHandler.build_pipeline.
+        self._on_announce = None
 
     def set_interrupt_handler(self, handler):
         """Register the async no-arg callback fired on a device 'interrupt'."""
@@ -66,6 +71,10 @@ class RawAudioSerializer(FrameSerializer):
     def set_wake_handler(self, handler):
         """Register the async no-arg callback fired on a device 'wake'."""
         self._on_wake = handler
+
+    def set_announce_handler(self, handler):
+        """Register the async callback(text) fired on a device 'announce'."""
+        self._on_announce = handler
 
     @property
     def type(self) -> FrameSerializerType:
@@ -133,6 +142,15 @@ class RawAudioSerializer(FrameSerializer):
                         await self._on_wake()
                     except Exception as e:
                         logger.warning(f"⚠️ device wake handler failed: {e!r}")
+            elif isinstance(data, dict) and data.get("type") == "announce":
+                # A Home Assistant announcement (device `announce` action). Run
+                # the handler as its own task: it may wait for a running
+                # conversation to finish, and deserialize() must not block the
+                # incoming audio/control stream meanwhile.
+                text = str(data.get("text") or "").strip()
+                logger.info(f"📢 device announce received ({len(text)} chars)")
+                if text and self._on_announce is not None:
+                    asyncio.create_task(self._on_announce(text))
             # interrupt / ping / start / other control frames: nothing to inject.
             return None
 

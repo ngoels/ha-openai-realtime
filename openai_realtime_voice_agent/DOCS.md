@@ -116,6 +116,23 @@ Every option has a description on the **Configuration** tab. The ones worth know
   nobody" or repeats itself); raise the prebuffer if you hear crackle at the
   start of replies.
 
+## 6a. Announcements from automations
+
+With the matching Voice PE firmware, the speaker gets a Home Assistant action
+`esphome.<device name>_announce`. It speaks a message in the assistant's own
+voice (your configured voice and speed):
+
+```yaml
+action: esphome.my_voice_pe_announce   # name depends on your device
+data:
+  message: "The washing machine is done."
+```
+
+- The text is spoken word for word and kept out of the conversation history.
+- If you're mid-conversation, it waits until the reply has finished (max 60 s).
+- The speaker does not listen afterwards; say "stop" to cut it short.
+- Each announcement is a short, paid OpenAI request.
+
 ## 7. Reading the logs
 
 The add-on log shows each turn: `🗣️ user:` (when transcription language is set),

@@ -13,7 +13,7 @@ from pipecat.transports.websocket.server import WebsocketServerTransport, Websoc
 from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 
 from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
-from pipecat.frames.frames import Frame, InputAudioRawFrame, OutputAudioRawFrame, StartFrame, EndFrame, ErrorFrame
+from pipecat.frames.frames import Frame, InputAudioRawFrame, OutputAudioRawFrame, StartFrame, EndFrame, ErrorFrame, LLMFullResponseEndFrame, LLMTextFrame, TTSTextFrame
 from pipecat.audio.utils import create_stream_resampler
 from pipecat.services.openai.realtime import events as openai_rt_events
 
@@ -325,6 +325,46 @@ class ConnectionRecovery(FrameProcessor):
             logger.warning(f"⚠️ could not emit idle after turn-ending error: {e!r}")
 
 
+# Max time an announcement waits for a running conversation to finish.
+ANNOUNCE_WAIT_S = 60.0
+
+
+class AnnouncementGuard(FrameProcessor):
+    """Keep out-of-band announcement responses out of the local chat context.
+
+    An announcement is a `response.create` with `conversation: "none"`, so
+    OpenAI never adds it to the conversation and pipecat never sees a
+    conversation.item.added for it -> no LLMFullResponseStartFrame. It still
+    gets the response.done -> LLMFullResponseEndFrame. Passed on, that unmatched
+    End frame would push the assistant aggregator's start/end counter below zero
+    and the NEXT real reply would silently drop out of the local context. So
+    while an announcement is in flight we drop its transcript text and its End
+    frame here (audio passes through untouched). Sits after the assistant
+    TranscriptLogger, so the announcement is still logged.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._active_until = 0.0
+
+    def arm(self, timeout_s: float = ANNOUNCE_WAIT_S) -> None:
+        self._active_until = time.monotonic() + timeout_s
+
+    @property
+    def active(self) -> bool:
+        return time.monotonic() < self._active_until
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+        if direction == FrameDirection.DOWNSTREAM and self.active:
+            if isinstance(frame, LLMFullResponseEndFrame):
+                self._active_until = 0.0  # announcement response finished
+                return
+            if isinstance(frame, (TTSTextFrame, LLMTextFrame)):
+                return
+        await self.push_frame(frame, direction)
+
+
 class WebSocketHandler:
     """Handles WebSocket transport initialization, pipeline building, and event management."""
     
@@ -460,6 +500,7 @@ class WebSocketHandler:
         # racing-`thinking` suppression); it is APPENDED near the end of the
         # pipeline below, before transport.output().
         phase_emitter = PhaseEmitter(send_phase=self.broadcast_phase)
+        announce_guard = AnnouncementGuard()
 
         pipeline_components = [
             transport.input(),
@@ -489,6 +530,7 @@ class WebSocketHandler:
                 TranscriptLogger(capture="user"),
                 openai_service,
                 TranscriptLogger(capture="assistant"),
+                announce_guard,
                 context_aggregator.assistant(),
             ])
         else:
@@ -496,6 +538,7 @@ class WebSocketHandler:
                 TranscriptLogger(capture="user"),
                 openai_service,
                 TranscriptLogger(capture="assistant"),
+                announce_guard,
             ])
 
         pipeline_components.append(output_activity_tracker)
@@ -683,6 +726,45 @@ class WebSocketHandler:
             # leak onto this fresh turn's response.
             _kill_next_response["v"] = False
 
+        async def _on_device_announce(text: str):
+            # Home Assistant announcement, forwarded by the device. Have OpenAI
+            # speak the text verbatim in the session's configured voice/speed,
+            # as an OUT-OF-BAND response (conversation "none", empty input): it
+            # is not added to the conversation, so it neither confuses the next
+            # question nor gets replayed on session reuse. The audio flows to
+            # the device through the normal pipeline (phase replying -> idle).
+            # Wait for any running turn to finish first (the device already
+            # waits too; this covers the backend's own view of the turn).
+            deadline = time.monotonic() + ANNOUNCE_WAIT_S
+            while (getattr(phase_emitter, "_current", None) not in (None, "idle")
+                   or getattr(openai_service, "_current_assistant_response", None) is not None):
+                if time.monotonic() > deadline:
+                    logger.warning("📢 announcement dropped — conversation still busy after "
+                                   f"{ANNOUNCE_WAIT_S:.0f} s")
+                    return
+                await asyncio.sleep(0.25)
+            instructions = (
+                "You are making a spoken announcement. Say the following text aloud "
+                "exactly as written, word for word. Do not add, remove, translate or "
+                "comment on anything.\n\n" + text
+            )
+            announce_guard.arm()
+            try:
+                await openai_service._ws_send({
+                    "type": "response.create",
+                    "response": {
+                        "conversation": "none",
+                        "input": [],
+                        "output_modalities": ["audio"],
+                        "instructions": instructions,
+                        "metadata": {"source": "ha_announce"},
+                    },
+                })
+                logger.info(f"📢 announcement → OpenAI response.create (out-of-band, {len(text)} chars)")
+            except Exception as e:
+                announce_guard.arm(0)
+                logger.warning(f"📢 announcement failed: {e!r}")
+
         # Wire the dangling-VAD guard's kill-window into the PhaseEmitter. It
         # reuses the SAME _interrupt_kill_until + _kill_racing_response machinery
         # as the device stop: on a dangling stop, arm it so the auto-created
@@ -705,6 +787,7 @@ class WebSocketHandler:
             self._serializer.set_session_start_handler(_on_device_session_start)
             self._serializer.set_mic_flush_handler(_on_device_mic_flush)
             self._serializer.set_wake_handler(_on_device_wake)
+            self._serializer.set_announce_handler(_on_device_announce)
 
         return pipeline, runner, task
     
