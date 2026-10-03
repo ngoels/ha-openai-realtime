@@ -168,6 +168,14 @@ configuration:
       gebruiken; leeg = allemaal. Met de ingebouwde MCP-server kun je dit
       leeg laten. Vooral nuttig met de ha-mcp-add-on (80+ tools) om gesprekken
       snel en goedkoop te houden.
+  include_entity_overview:
+    name: "🏠 Home Assistant · Entiteitnamen meegeven"
+    description: >-
+      Voegt aan het begin van elk gesprek de namen, domeinen en ruimtes van
+      alle blootgestelde entiteiten toe aan de systeemprompt (zonder actuele
+      waarden), zoals de eigen spraakassistenten van Home Assistant doen. De
+      assistent vindt je apparaten dan op naam in plaats van zoekfilters te
+      raden. Standaard aan; zet het alleen uit bij heel veel entiteiten.
 
   # --- ⚙️ Geavanceerd ---
   websocket_port:

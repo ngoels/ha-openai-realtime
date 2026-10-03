@@ -164,6 +164,14 @@ configuration:
       all of them. With the built-in MCP server you can leave this empty.
       Mainly useful with the ha-mcp add-on (80+ tools) to keep conversations
       fast and cheap.
+  include_entity_overview:
+    name: "🏠 Home Assistant · Give the assistant your entity names"
+    description: >-
+      At the start of each conversation, adds the names, domains and areas of
+      all exposed entities to the system prompt (no live values), like Home
+      Assistant's own voice assistants do. The assistant then finds your
+      devices by name instead of guessing search filters. On by default; turn
+      off only if you expose a very large number of entities.
 
   # --- ⚙️ Advanced ---
   websocket_port:

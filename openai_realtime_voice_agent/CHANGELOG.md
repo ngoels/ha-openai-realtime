@@ -2,6 +2,17 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.6.1
+
+- **The assistant now knows your device names.** At the start of each
+  conversation the add-on fetches the list of exposed entities (names, domains,
+  areas; no live values) through the MCP server's `GetLiveContext` tool and adds
+  it to the system prompt, as Home Assistant's own voice assistants do. Before,
+  the model had to guess search filters ("Temperatur", "Haus", domain "tv"),
+  which often found nothing, especially when you speak a different language
+  than your entity names. New option **`include_entity_overview`** (on by
+  default). Look for `🏠 Added N exposed entities to the instructions` in the log.
+
 ## 0.6.0
 
 > ⚠️ **This update has two parts — please update both:**
