@@ -86,6 +86,14 @@ if bashio::config.has_value 'openai_voice_custom'; then
     OPENAI_VOICE_CUSTOM=$(bashio::config 'openai_voice_custom')
     export OPENAI_VOICE_CUSTOM
 fi
+if bashio::config.has_value 'web_search_city'; then
+    WEB_SEARCH_CITY=$(bashio::config 'web_search_city')
+    export WEB_SEARCH_CITY
+fi
+if bashio::config.has_value 'web_search_region'; then
+    WEB_SEARCH_REGION=$(bashio::config 'web_search_region')
+    export WEB_SEARCH_REGION
+fi
 if bashio::config.has_value 'web_search_model_custom'; then
     WEB_SEARCH_MODEL_CUSTOM=$(bashio::config 'web_search_model_custom')
     export WEB_SEARCH_MODEL_CUSTOM

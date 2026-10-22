@@ -126,6 +126,18 @@ configuration:
     description: >-
       Only used when Search model is set to "custom". Any model that supports
       OpenAI's web_search tool. (Hidden by default.)
+  web_search_city:
+    name: "🌐 Web search · Home city"
+    description: >-
+      Your city, used for questions that name no place ("weather tomorrow",
+      "pharmacy open now"). Country and time zone come from Home Assistant
+      (Settings → System → General) automatically. Leave empty to search
+      country-wide.
+  web_search_region:
+    name: "🌐 Web search · Home region (optional)"
+    description: >-
+      Your state or region, e.g. "Vienna" or "Bavaria". Optional refinement of
+      the home city.
 
   # --- 🎚️ Audio ---
   playback_prebuffer_ms:
