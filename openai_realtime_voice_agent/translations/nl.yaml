@@ -129,6 +129,16 @@ configuration:
     description: >-
       Alleen gebruikt als Zoekmodel op "custom" staat. Elk model dat OpenAI's
       web_search-tool ondersteunt. (Standaard verborgen.)
+  web_search_city:
+    name: "🌐 Websearch · Woonplaats"
+    description: >-
+      Je woonplaats, gebruikt voor vragen zonder plaatsnaam ("weer morgen").
+      Land en tijdzone komen automatisch uit Home Assistant (Instellingen →
+      Systeem → Algemeen). Leeg laten om landelijk te zoeken.
+  web_search_region:
+    name: "🌐 Websearch · Regio (optioneel)"
+    description: >-
+      Je provincie of regio. Optionele verfijning van de woonplaats.
 
   # --- 🎚️ Audio ---
   playback_prebuffer_ms:

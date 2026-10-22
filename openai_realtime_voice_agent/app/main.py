@@ -13,7 +13,11 @@ from pipecat.transports.websocket.server import WebsocketServerTransport
 from app.mcp_service import HomeAssistantMCPService
 from app.phase_emitter import TURN_LIVENESS
 from app.disconnect_tool import get_disconnect_tool_definition, create_disconnect_tool_handler
-from app.web_search_tool import get_web_search_tool_definition, create_web_search_tool_handler
+from app.web_search_tool import (
+    get_web_search_tool_definition,
+    create_web_search_tool_handler,
+    resolve_home_location,
+)
 from app.audio_recording_service import AudioRecordingService
 from app.session_manager import SessionManager
 from app.websocket_handler import WebSocketHandler
@@ -338,6 +342,10 @@ class Application:
         web_search_model = _resolve_choice(
             "WEB_SEARCH_MODEL", "WEB_SEARCH_MODEL_CUSTOM", "gpt-5.5"
         )
+        # Home location for web search: country + time zone from Home Assistant,
+        # optional city/region from the add-on options (resolved below).
+        web_search_city = os.environ.get("WEB_SEARCH_CITY", "")
+        web_search_region = os.environ.get("WEB_SEARCH_REGION", "")
 
         # Get recording setting (optional, defaults to false)
         enable_recording = os.environ.get("ENABLE_RECORDING", "false").lower() == "true"
@@ -460,6 +468,15 @@ class Application:
         self.mcp_client = mcp_client
         self.enable_web_search = enable_web_search
         self.web_search_model = web_search_model
+        self.web_search_location = None
+        if enable_web_search:
+            self.web_search_location = await resolve_home_location(
+                os.environ.get("HA_MCP_URL", "http://supervisor/core/api/mcp"),
+                os.environ.get("LONGLIVED_TOKEN") or os.environ.get("SUPERVISOR_TOKEN"),
+                web_search_city,
+                web_search_region,
+            )
+            logger.info(f"🌐 web_search home location: {self.web_search_location or 'none (search may assume the US)'}")
 
         # Initialize audio recording service (optional)
         self.audio_recording_service = AudioRecordingService(
@@ -713,7 +730,9 @@ class Application:
             if self.enable_web_search:
                 self.openai_service.register_function(
                     "web_search",
-                    create_web_search_tool_handler(self.openai_api_key, self.web_search_model),
+                    create_web_search_tool_handler(
+                        self.openai_api_key, self.web_search_model, self.web_search_location
+                    ),
                 )
                 logger.info(f"✅ Registered web_search tool handler (model={self.web_search_model})")
             

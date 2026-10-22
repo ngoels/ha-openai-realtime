@@ -116,6 +116,13 @@ Every option has a description on the **Configuration** tab. The ones worth know
   nobody" or repeats itself); raise the prebuffer if you hear crackle at the
   start of replies.
 
+## 5a. Web search location
+
+Questions that name no place ("weather tomorrow") are searched for your home:
+country and time zone come from Home Assistant (Settings → System → General);
+set **`web_search_city`** (and optionally **`web_search_region`**) for local
+results. The add-on log shows `🌐 web_search home location: …` at startup.
+
 ## 6a. Announcements from automations
 
 With the matching Voice PE firmware, the speaker gets a Home Assistant action

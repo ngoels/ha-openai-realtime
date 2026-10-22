@@ -2,6 +2,17 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.6.3
+
+- **Web search knows where home is.** Searches that name no place ("weather
+  tomorrow", "which pharmacy is open") now use your home location instead of
+  OpenAI's default (often the US). Country and time zone are read from Home
+  Assistant (Settings → System → General); set the new options
+  **`web_search_city`** (and optionally **`web_search_region`**) for local
+  results. Look for `🌐 web_search home location` in the log at startup.
+- Web search status messages ("search failed", "nothing found") are no longer
+  hard-coded in Dutch; the assistant says them in your conversation language.
+
 ## 0.6.2
 
 > Needs the matching Voice PE firmware (ngoels/home-assistant-voice-pe) with
