@@ -116,6 +116,17 @@ Every option has a description on the **Configuration** tab. The ones worth know
   nobody" or repeats itself); raise the prebuffer if you hear crackle at the
   start of replies.
 
+## 4a. Voice commands from automations
+
+Automations with a sentence trigger ("When a sentence is said") work by voice,
+as with the stock firmware: the assistant picks the matching sentence and Home
+Assistant runs the automation. Only enabled automations, and only via one of
+their sentences. They don't need to be exposed — keep automations
+**un-exposed** (Settings → Voice assistants → Expose) so the assistant can't
+switch them on or off. To have the assistant speak a result, end the
+automation with `set_conversation_response`. New or changed automations are
+picked up within 5 minutes (at the next conversation).
+
 ## 5a. Web search location
 
 Questions that name no place ("weather tomorrow") are searched for your home:

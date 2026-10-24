@@ -184,6 +184,14 @@ configuration:
       Assistant's own voice assistants do. The assistant then finds your
       devices by name instead of guessing search filters. On by default; turn
       off only if you expose a very large number of entities.
+  enable_voice_commands:
+    name: "🏠 Home Assistant · Voice commands from automations"
+    description: >-
+      Lets the assistant run your automations that have a sentence trigger
+      ("When a sentence is said"), like the stock Voice PE firmware did. Only
+      enabled automations with a sentence trigger can be run, and only by one
+      of their sentences. Automations do not need to be exposed — leave them
+      un-exposed so the assistant can't switch them off. On by default.
 
   # --- ⚙️ Advanced ---
   websocket_port:

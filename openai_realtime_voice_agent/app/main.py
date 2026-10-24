@@ -13,6 +13,12 @@ from pipecat.transports.websocket.server import WebsocketServerTransport
 from app.mcp_service import HomeAssistantMCPService
 from app.phase_emitter import TURN_LIVENESS
 from app.disconnect_tool import get_disconnect_tool_definition, create_disconnect_tool_handler
+from app.sentence_commands import (
+    SentenceCommandCatalog,
+    TOOL_NAME as VOICE_COMMAND_TOOL,
+    get_voice_command_tool_definition,
+    create_voice_command_handler,
+)
 from app.web_search_tool import (
     get_web_search_tool_definition,
     create_web_search_tool_handler,
@@ -344,6 +350,9 @@ class Application:
         )
         # Home location for web search: country + time zone from Home Assistant,
         # optional city/region from the add-on options (resolved below).
+        # Voice commands: run automations with sentence triggers, as the stock
+        # firmware did through Home Assistant's own Assist pipeline.
+        enable_voice_commands = os.environ.get("ENABLE_VOICE_COMMANDS", "true").lower() == "true"
         web_search_city = os.environ.get("WEB_SEARCH_CITY", "")
         web_search_region = os.environ.get("WEB_SEARCH_REGION", "")
 
@@ -469,6 +478,17 @@ class Application:
         self.enable_web_search = enable_web_search
         self.web_search_model = web_search_model
         self.web_search_location = None
+        self.voice_commands = None
+        if enable_voice_commands:
+            catalog = SentenceCommandCatalog(
+                os.environ.get("HA_MCP_URL", "http://supervisor/core/api/mcp"),
+                os.environ.get("LONGLIVED_TOKEN") or os.environ.get("SUPERVISOR_TOKEN"),
+            )
+            if catalog.available:
+                self.voice_commands = catalog
+                await catalog.refresh(force=True)
+            else:
+                logger.warning("⚠️ Voice commands disabled: no Home Assistant token")
         if enable_web_search:
             self.web_search_location = await resolve_home_location(
                 os.environ.get("HA_MCP_URL", "http://supervisor/core/api/mcp"),
@@ -589,6 +609,16 @@ class Application:
             # a secondary OpenAI Responses web_search call in the handler.
             if self.enable_web_search:
                 all_tools.append(get_web_search_tool_definition())
+
+            # Voice-command tool: only when at least one enabled automation has a
+            # sentence trigger. The list is re-read (cached 5 min) per session so
+            # new or changed automations are picked up.
+            voice_commands_active = False
+            if self.voice_commands:
+                await self.voice_commands.refresh()
+                if self.voice_commands.commands:
+                    all_tools.append(get_voice_command_tool_definition(self.voice_commands))
+                    voice_commands_active = True
 
             # Get MCP tool definitions if available
             mcp_tools_schema = None
@@ -736,6 +766,12 @@ class Application:
                 )
                 logger.info(f"✅ Registered web_search tool handler (model={self.web_search_model})")
             
+            if voice_commands_active:
+                self.openai_service.register_function(
+                    VOICE_COMMAND_TOOL, create_voice_command_handler(self.voice_commands)
+                )
+                logger.info(f"✅ Registered {VOICE_COMMAND_TOOL} ({len(self.voice_commands.commands)} automations)")
+
             # Register MCP tool handlers if available
             if self.mcp_client and mcp_tools_schema:
                 try:

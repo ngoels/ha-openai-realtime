@@ -32,6 +32,7 @@ HA_MCP_URL=$(bashio::config 'ha_mcp_url')
 LONGLIVED_TOKEN=$(bashio::config 'longlived_token')
 MCP_TOOL_ALLOWLIST=$(bashio::config 'mcp_tool_allowlist')
 INCLUDE_ENTITY_OVERVIEW=$(bashio::config 'include_entity_overview')
+ENABLE_VOICE_COMMANDS=$(bashio::config 'enable_voice_commands')
 
 # --- ⚙️ Advanced ---
 WEBSOCKET_PORT=$(bashio::config 'websocket_port')
@@ -68,6 +69,7 @@ export NOISE_REDUCTION
 export LONGLIVED_TOKEN
 export MCP_TOOL_ALLOWLIST
 export INCLUDE_ENTITY_OVERVIEW
+export ENABLE_VOICE_COMMANDS
 export WEBSOCKET_PORT
 export SESSION_REUSE_TIMEOUT_SECONDS
 export MAX_CONTEXT_MESSAGES
