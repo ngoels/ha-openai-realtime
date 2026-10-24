@@ -186,6 +186,13 @@ configuration:
       waarden), zoals de eigen spraakassistenten van Home Assistant doen. De
       assistent vindt je apparaten dan op naam in plaats van zoekfilters te
       raden. Standaard aan; zet het alleen uit bij heel veel entiteiten.
+  enable_voice_commands:
+    name: "🏠 Home Assistant · Spraakopdrachten uit automatiseringen"
+    description: >-
+      Laat de assistent je automatiseringen met een zinstrigger uitvoeren,
+      zoals de standaard Voice PE-firmware deed. Alleen ingeschakelde
+      automatiseringen met een zinstrigger, en alleen via een van hun zinnen.
+      Automatiseringen hoeven niet blootgesteld te worden. Standaard aan.
 
   # --- ⚙️ Geavanceerd ---
   websocket_port:

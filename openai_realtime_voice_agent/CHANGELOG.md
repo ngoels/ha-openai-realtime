@@ -2,6 +2,22 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.6.4
+
+- **Voice commands from automations, like the stock firmware.** Automations
+  with a sentence trigger ("When a sentence is said") can be run by voice
+  again. The assistant gets the list of their sentences, maps what you say
+  onto one of them and hands it to Home Assistant's own conversation agent,
+  which runs the automation and returns its reply (e.g. from
+  `set_conversation_response`). Only enabled automations with a sentence
+  trigger, and only via one of their sentences — anything else is refused.
+  Automations don't need to be exposed; **un-expose them** so the assistant
+  can't switch them off. New option **`enable_voice_commands`** (on). Look for
+  `🗣️ Voice commands:` in the log. Automations that speak via the speaker's
+  `announce` action wait until the conversation has ended — use
+  `set_conversation_response` (or a script) for answers that should be spoken
+  directly.
+
 ## 0.6.3
 
 - **Web search knows where home is.** Searches that name no place ("weather
