@@ -1,5 +1,5 @@
 # User-facing names + help for the Configuration tab. The emoji prefixes are
-# the only "grouping" HA's add-on UI supports — they match the order/groups in
+# the only "grouping" HA's app UI supports — they match the order/groups in
 # config.yaml. Keep descriptions PRACTICAL: what it does, when to change it,
 # what value makes sense. A Dutch version lives in nl.yaml.
 configuration:
@@ -27,7 +27,7 @@ configuration:
     description: >-
       Two-letter code of the language you speak to it. Setting it keeps the
       assistant from drifting into other languages, AND writes what you said
-      into the add-on log (the 🗣️ lines — handy to check what it heard).
+      into the app log (the 🗣️ lines — handy to check what it heard).
       Leave empty for auto-detect (no user transcript in the log).
 
   # --- 🗣️ Model & voice ---
@@ -49,7 +49,7 @@ configuration:
     description: >-
       The voice it speaks with. marin and cedar are the newest and sound the
       most natural. A running conversation keeps its voice — restart the
-      add-on after changing this. For an unlisted voice pick "custom" and
+      app after changing this. For an unlisted voice pick "custom" and
       enable "Show unused optional configuration options" at the bottom.
   openai_voice_custom:
     name: "🗣️ Model & voice · Voice (custom)"
@@ -162,11 +162,11 @@ configuration:
       How the assistant controls your home. Leave EMPTY (recommended): it
       then uses Home Assistant's built-in "MCP Server" integration — install
       that integration and expose your entities to Assist. Only fill in a URL
-      if you run the separate ha-mcp add-on instead.
+      if you run the separate ha-mcp app instead.
   longlived_token:
     name: "🏠 Home Assistant · Access token"
     description: >-
-      Leave empty (recommended): the add-on uses its own built-in permission.
+      Leave empty (recommended): the app uses its own built-in permission.
       Only create and paste a long-lived token (your HA profile → Security)
       if the log shows a 401/403 error at startup.
   mcp_tool_allowlist:
@@ -174,7 +174,7 @@ configuration:
     description: >-
       Comma-separated list of control tools the assistant may use; empty =
       all of them. With the built-in MCP server you can leave this empty.
-      Mainly useful with the ha-mcp add-on (80+ tools) to keep conversations
+      Mainly useful with the ha-mcp app (80+ tools) to keep conversations
       fast and cheap.
   include_entity_overview:
     name: "🏠 Home Assistant · Give the assistant your entity names"
@@ -203,7 +203,7 @@ configuration:
   session_reuse_timeout_seconds:
     name: "⚙️ Advanced · Conversation resume window (seconds)"
     description: >-
-      If the device reconnects within this many seconds (Wi-Fi blip, add-on
+      If the device reconnects within this many seconds (Wi-Fi blip, app
       restart), the conversation continues where it left off. 300 (5 min) is
       a good default; 0 = always start fresh.
   max_context_messages:
@@ -254,5 +254,5 @@ configuration:
   enable_recording:
     name: "🔍 Debug · Record audio"
     description: >-
-      Saves microphone and speaker audio to files inside the add-on, for
+      Saves microphone and speaker audio to files inside the app, for
       troubleshooting only. Leave off normally.
