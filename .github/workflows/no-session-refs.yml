@@ -1,0 +1,20 @@
+name: No session references
+on:
+  push:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check commit messages and PR text
+        env:
+          TEXT: ${{ toJSON(github.event.commits) }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if printf '%s\n%s\n%s\n' "$TEXT" "$PR_TITLE" "$PR_BODY" | grep -qiE 'claude-session:|claude\.ai/code/session_'; then
+            echo "::error::Session reference found in a commit message or PR text."
+            exit 1
+          fi
